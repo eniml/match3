@@ -4,45 +4,78 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Random;
 
+//todo Reshuffle;
+
 /**
  * Created by eniml on 01.06.2016.
  */
 public class board implements ActionListener {
     private static JButton[][] board;
     private static JLabel[] dbg;
-    Color fc;
-    Color sc;
-    int x, y;
-    Object source;
-    int mLenth = 16, mWidth = 16;
-    private Color[] colors = {Color.RED, Color.GREEN, Color.BLUE, Color.PINK, Color.YELLOW, Color.CYAN, Color.WHITE};
-    private String[] textColor = new String[]{"red", "green", "blue"/*, "pink", "yellow", "cyan", "white"*/};
-    private int fx = 3, fy = 3, sx = 0, sy = 0;
+    private final int mLenth = 20;
+    private final int mWidth = 20;
+    private final Color[] colors = {Color.RED, Color.GREEN, Color.BLUE, Color.PINK, Color.YELLOW, Color.CYAN};
+    private Color fc;
+    private Color sc;
+    private Object source;
+    private int score;
+    //private String[] textColor = new String[]{"red", "green", "blue"/*, "pink", "yellow", "cyan", "white"*/};
+    private int fx = 4;
+    private int fy = 4;
+    private int sy = 0;
     private boolean fpr = false, spr = false;
 
-    public board() {
+    private board() {
         board = new JButton[mLenth][mWidth];
         int row, col;
         Random random = new Random();
         JFrame.setDefaultLookAndFeelDecorated(false);
         final JFrame tframe = new JFrame("test");
-        tframe.setLayout(new GridLayout(17, 16));
+        tframe.setLayout(new GridLayout(11, 10));
+        JMenuBar menuBar = new JMenuBar();
+        JMenu fileMenu = new JMenu("Game");
+        fileMenu.addSeparator();
+        JMenuItem newGameItem = new JMenuItem("New Game");
+        fileMenu.add(newGameItem);
+        newGameItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                reshuffle(board);
+                destroynewmatches(board);
+                score = 0;
+                dbg[0].setText(String.valueOf(getScore()));
+            }
+        });
+        JMenuItem exitItem = new JMenuItem("Exit");
+        fileMenu.add(exitItem);
+        exitItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                System.exit(0);
+            }
+        });
+        menuBar.add(fileMenu);
+        tframe.setJMenuBar(menuBar);
         for (col = 0; col < mLenth; col++) {
             for (row = 0; row < mWidth; row++) {
+                boolean bool = true;
                 board[row][col] = new JButton();
                 int pos = random.nextInt(colors.length);
                 board[row][col].setBackground(colors[pos]);
-                if ((col == 0) | (col == 1) | (col == 2) | (row == 0) | (row == 1) | (row == 2) | (col == 13) | (col == 14) | (col == 15) | (row == 13) | (row == 14) | (row == 15)) {
-                    board[row][col].setEnabled(false);
-                    board[row][col].setBackground(Color.BLACK);
-                    board[row][col].setVisible(true);
+                if ((col < 5) | (col > 14) | (row < 5) | (row > 14)) {
 
+                    bool = false;
+                    board[row][col].setEnabled(false);
+                    board[row][col].setBackground(Color.WHITE);
+                    board[row][col].setVisible(true);
                 }
                 board[row][col].setToolTipText(String.valueOf(row + " " + col) + "   " + board[row][col].getBackground());
                 board[row][col].addActionListener(this);
-                tframe.add(board[row][col]);
+                if (bool) {
+                    tframe.add(board[row][col]);
+                }
             }
         }
+        destroynewmatches(board);
+        score = 0;
         dbg = new JLabel[7];
         dbg[0] = new JLabel();
         tframe.add(dbg[0]);
@@ -68,6 +101,24 @@ public class board implements ActionListener {
         JFrame q = new JFrame();
     }
 
+    private void reshuffle(JButton[][] board) {
+        Random r = new Random();
+        for (int i = mWidth - 6; i >= 5; i--) {
+            for (int j = 5; j <= mLenth - 6; j++) {
+                int pos = r.nextInt(colors.length);
+                board[j][i].setBackground(colors[pos]);
+            }
+        }
+    }
+
+    int getScore() {
+        return score;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
+    }
+
     public void actionPerformed(ActionEvent e) {
         int tempX, tempY;
         Color tempC;
@@ -75,24 +126,35 @@ public class board implements ActionListener {
         tempX = getX(source, board);
         tempY = getY(source, board);
         tempC = board[tempX][tempY].getBackground();
-        sx = tempX;
+        int sx = tempX;
         sy = tempY;
         sc = tempC;
-        dbg[0].setText(fx + "   ");
-        dbg[1].setText(fy + "    || ");
-        dbg[2].setText(sx + "  ");
-        dbg[3].setText(sy + "  ");
+
+        //dbg[1].setText(fy + "    || ");
+        //dbg[2].setText(sx + "  ");
+        //dbg[3].setText(sy + "  ");
         fpr = true;
-//todo Add inverted moves;
+
         if ((moveXtoRightIsUsefull(fx, fy, board) && (fy == sy) && ((sx - fx) == 1)) ||
                 (moveXtoLeftIsUsefull(fx, fy, board) && (fy == sy) && ((fx - sx) == 1)) ||
                 (moveYUpIsUsefull(fx, fy, board) && (fx == sx) && ((sy - fy) == 1)) ||
-                (moveYDownIsUsefull(fx, fy, board) && (fx == sx) && ((fy - sy) == 1))
+                (moveYDownIsUsefull(fx, fy, board) && (fx == sx) && ((fy - sy) == 1)) ||
+                (moveXtoRightIsUsefull(sx, sy, board) && (fy == sy) && ((fx - sx) == 1)) ||
+                (moveXtoLeftIsUsefull(sx, sy, board) && (fy == sy) && ((sx - fx) == 1)) ||
+                (moveYUpIsUsefull(sx, sy, board) && (fx == sx) && ((fy - sy) == 1)) ||
+                (moveYDownIsUsefull(sx, sy, board) && (fx == sx) && ((sy - fy) == 1))
                         && (spr) && (sx + sy >= 0)) {
             board[sx][sy].setBackground(fc);
             board[fx][fy].setBackground(tempC);
-            fx = 3;
-            fy = 3;
+            destroyaftermove(fx, fy, board);
+            destroyaftermove(sx, sy, board);
+            fillwhytes(board);
+            filldestroeydwhytes(board);
+            destroynewmatches(board);
+            dbg[0].setText(String.valueOf(getScore()));
+
+            fx = 4;
+            fy = 4;
             sx = 0;
             sy = 0;
             spr = false;
@@ -105,7 +167,252 @@ public class board implements ActionListener {
         }
     }
 
-    public int getY(Object t, JButton[][] m) {
+    private boolean matchexistcheker(JButton[][] board) {
+        boolean check = false;
+        for (int i = mWidth - 6; i >= 5; i--) {
+            for (int j = 5; j <= mLenth - 6; j++) {
+                if (moveXtoRightIsUsefull(j, i, board) || moveXtoLeftIsUsefull(j, i, board) || moveYUpIsUsefull(j, i, board) || moveYDownIsUsefull(j, i, board))
+                    check = true;
+                break;
+            }
+        }
+        return check;
+    }
+
+    private void destroynewmatches(JButton[][] board) {
+        int t = 0;
+        while (t <= 20) {
+            for (int i = mWidth - 6; i >= 5; i--) {
+                for (int j = 5; j <= mLenth - 6; j++) {
+                    destroyaftermove(j, i, board);
+                    filldestroeydwhytes(board);
+                    t++;
+                }
+            }
+        }
+    }
+
+    private void filldestroeydwhytes(JButton[][] board) {
+        Random r = new Random();
+        for (int i = mWidth - 6; i >= 5; i--) {
+            for (int j = 5; j <= mLenth - 6; j++) {
+                if (board[j][i].getBackground().equals(Color.WHITE)) {
+                    int pos = r.nextInt(colors.length);
+                    board[j][i].setBackground(colors[pos]);
+                }
+            }
+        }
+
+    }
+
+    private void fillwhytes(JButton[][] board) {
+        for (int i = mWidth - 6; i >= 5; i--) {
+            for (int j = 5; j <= mLenth - 6; j++) {
+                int k;
+                k = i - 1;
+                while ((board[j][i].getBackground().equals(Color.WHITE) && (k >= 5))) {
+                    board[j][i].setBackground(board[j][k].getBackground());
+                    board[j][k].setBackground(Color.WHITE);
+                    k--;
+                }
+            }
+        }
+    }
+
+    private void destroyaftermove(int x1, int y1, JButton[][] m) {
+        //x+
+        if ((m[x1][y1].getBackground().equals(m[x1 + 1][y1].getBackground())) && (m[x1][y1].getBackground().equals(m[x1 + 2][y1].getBackground())) && (0 <= x1) && (x1 < mWidth - 2)) {
+            if ((m[x1][y1].getBackground().equals(m[x1 - 1][y1].getBackground())) && (1 <= x1)) {
+                if ((m[x1][y1].getBackground().equals(m[x1 + 3][y1].getBackground())) && (x1 < mWidth - 3)) {    //+x+++
+                    m[x1][y1].setBackground(Color.white);
+                    m[x1 + 1][y1].setBackground(Color.white);
+                    m[x1 + 2][y1].setBackground(Color.white);
+                    m[x1 - 1][y1].setBackground(Color.white);
+                    m[x1 + 3][y1].setBackground(Color.white);
+                    score = score + 5;
+                }
+                if ((m[x1][y1].getBackground().equals(m[x1 - 2][y1].getBackground())) && (2 <= x1)) {    //++x++
+                    m[x1][y1].setBackground(Color.white);
+                    m[x1 + 1][y1].setBackground(Color.white);
+                    m[x1 + 2][y1].setBackground(Color.white);
+                    m[x1 - 1][y1].setBackground(Color.white);
+                    m[x1 - 2][y1].setBackground(Color.white);
+                    score = score + 5;
+                } else {
+                    m[x1][y1].setBackground(Color.white);                                   //+x++
+                    m[x1 + 1][y1].setBackground(Color.white);
+                    m[x1 + 2][y1].setBackground(Color.white);
+                    m[x1 - 1][y1].setBackground(Color.white);
+                    score = score + 4;
+                }
+            }
+            if ((m[x1][y1].getBackground().equals(m[x1 + 3][y1].getBackground())) && (x1 <= mWidth - 3)) {
+                if ((m[x1][y1].getBackground().equals(m[x1 + 4][y1].getBackground())) && (x1 <= mWidth - 3)) {    //x++++
+                    m[x1][y1].setBackground(Color.white);
+                    m[x1 + 1][y1].setBackground(Color.white);
+                    m[x1 + 2][y1].setBackground(Color.white);
+                    m[x1 + 3][y1].setBackground(Color.white);
+                    m[x1 + 4][y1].setBackground(Color.white);
+                    score = score + 5;
+                } else {
+                    m[x1][y1].setBackground(Color.white);                                   //x+++
+                    m[x1 + 1][y1].setBackground(Color.white);
+                    m[x1 + 2][y1].setBackground(Color.white);
+                    m[x1 + 3][y1].setBackground(Color.white);
+                    score = score + 4;
+                }
+            } else {
+                m[x1][y1].setBackground(Color.white);                                       //x++
+                m[x1 + 1][y1].setBackground(Color.white);
+                m[x1 + 2][y1].setBackground(Color.white);
+                score = score + 3;
+            }
+        }
+        //-x
+        if ((m[x1][y1].getBackground().equals(m[x1 - 1][y1].getBackground())) && (m[x1][y1].getBackground().equals(m[x1 - 2][y1].getBackground())) && (2 <= x1) && (x1 < mWidth)) {
+            if ((m[x1][y1].getBackground().equals(m[x1 + 1][y1].getBackground())) && (x1 < mWidth - 1)) {
+                if ((m[x1][y1].getBackground().equals(m[x1 - 3][y1].getBackground())) && (3 <= x1)) {   //+++x+
+                    m[x1][y1].setBackground(Color.white);
+                    m[x1 - 1][y1].setBackground(Color.white);
+                    m[x1 - 2][y1].setBackground(Color.white);
+                    m[x1 - 3][y1].setBackground(Color.white);
+                    m[x1 + 1][y1].setBackground(Color.white);
+                    score = score + 5;
+                } else {                                                                    //++x+
+                    m[x1][y1].setBackground(Color.white);
+                    m[x1 - 1][y1].setBackground(Color.white);
+                    m[x1 - 2][y1].setBackground(Color.white);
+                    m[x1 + 1][y1].setBackground(Color.white);
+                    score = score + 4;
+                }
+            }
+            if ((m[x1][y1].getBackground().equals(m[x1 - 3][y1].getBackground())) && (3 <= x1)) {
+                if ((m[x1][y1].getBackground().equals(m[x1 - 4][y1].getBackground())) && (5 <= x1)) {    //++++x
+                    m[x1][y1].setBackground(Color.white);
+                    m[x1 - 1][y1].setBackground(Color.white);
+                    m[x1 - 2][y1].setBackground(Color.white);
+                    m[x1 - 3][y1].setBackground(Color.white);
+                    m[x1 - 4][y1].setBackground(Color.white);
+                    score = score + 5;
+                } else {
+                    m[x1][y1].setBackground(Color.white);                                   //+++x
+                    m[x1 - 1][y1].setBackground(Color.white);
+                    m[x1 - 2][y1].setBackground(Color.white);
+                    m[x1 - 3][y1].setBackground(Color.white);
+                    score = score + 4;
+                }
+            } else {                                                                        //++x
+                m[x1][y1].setBackground(Color.white);
+                m[x1 - 1][y1].setBackground(Color.white);
+                m[x1 - 2][y1].setBackground(Color.white);
+                score = score + 3;
+            }
+        }
+        //y+
+        if ((m[x1][y1].getBackground().equals(m[x1][y1 + 1].getBackground())) && (m[x1][y1].getBackground().equals(m[x1][y1 + 2].getBackground())) && (0 <= y1) && (y1 < mWidth - 2)) {
+            if ((m[x1][y1].getBackground().equals(m[x1][y1 - 1].getBackground())) && (1 <= y1)) {
+                if ((m[x1][y1].getBackground().equals(m[x1][y1 + 3].getBackground())) && (y1 < mWidth - 3)) {    //+x+++
+                    m[x1][y1].setBackground(Color.white);
+                    m[x1][y1 + 1].setBackground(Color.white);
+                    m[x1][y1 + 2].setBackground(Color.white);
+                    m[x1][y1 - 1].setBackground(Color.white);
+                    m[x1][y1 + 3].setBackground(Color.white);
+                    score = score + 5;
+                }
+                if ((m[x1][y1].getBackground().equals(m[x1][y1 - 2].getBackground())) && (2 <= y1)) {    //++x++
+                    m[x1][y1].setBackground(Color.white);
+                    m[x1][y1 + 1].setBackground(Color.white);
+                    m[x1][y1 + 2].setBackground(Color.white);
+                    m[x1][y1 - 1].setBackground(Color.white);
+                    m[x1][y1 - 2].setBackground(Color.white);
+                    score = score + 5;
+                } else {
+                    m[x1][y1].setBackground(Color.white);                                   //+x++
+                    m[x1][y1 + 11].setBackground(Color.white);
+                    m[x1][y1 + 2].setBackground(Color.white);
+                    m[x1][y1 - 1].setBackground(Color.white);
+                    score = score + 4;
+                }
+            }
+            if ((m[x1][y1].getBackground().equals(m[x1][y1 + 3].getBackground())) && (y1 < mWidth - 3)) {
+                if ((m[x1][y1].getBackground().equals(m[x1][y1 + 4].getBackground())) && (y1 < mWidth - 4)) {    //x++++
+                    m[x1][y1].setBackground(Color.white);
+                    m[x1][y1 + 1].setBackground(Color.white);
+                    m[x1][y1 + 2].setBackground(Color.white);
+                    m[x1][y1 + 3].setBackground(Color.white);
+                    m[x1][y1 + 4].setBackground(Color.white);
+                    score = score + 5;
+                } else {
+                    m[x1][y1].setBackground(Color.white);                                   //x+++
+                    m[x1][y1 + 1].setBackground(Color.white);
+                    m[x1][y1 + 2].setBackground(Color.white);
+                    m[x1][y1 + 3].setBackground(Color.white);
+                    score = score + 4;
+                }
+            } else {
+                m[x1][y1].setBackground(Color.white);                                       //x++
+                m[x1][y1 + 1].setBackground(Color.white);
+                m[x1][y1 + 2].setBackground(Color.white);
+                score = score + 3;
+            }
+        }
+        //y-
+        if ((m[x1][y1].getBackground().equals(m[x1][y1 - 1].getBackground())) && (m[x1][y1].getBackground().equals(m[x1][y1 - 2].getBackground())) && (2 <= y1)) {
+            if ((m[x1][y1].getBackground().equals(m[x1][y1 + 1].getBackground())) && (y1 < mWidth - 1)) {
+                if ((m[x1][y1].getBackground().equals(m[x1][y1 - 3].getBackground())) && (3 <= y1)) {   //+++x+
+                    m[x1][y1].setBackground(Color.white);
+                    m[x1][y1 - 1].setBackground(Color.white);
+                    m[x1][y1 - 2].setBackground(Color.white);
+                    m[x1][y1 - 3].setBackground(Color.white);
+                    m[x1][y1 + 1].setBackground(Color.white);
+                    score = score + 5;
+                } else {                                                                    //++x+
+                    m[x1][y1].setBackground(Color.white);
+                    m[x1][y1 - 1].setBackground(Color.white);
+                    m[x1][y1 - 2].setBackground(Color.white);
+                    m[x1][y1 + 1].setBackground(Color.white);
+                    score = score + 4;
+                }
+            }
+            if ((m[x1][y1].getBackground().equals(m[x1][y1 - 3].getBackground())) && (3 <= y1)) {
+                if ((m[x1][y1].getBackground().equals(m[x1][y1 - 4].getBackground())) && (5 <= y1)) {    //++++x
+                    m[x1][y1].setBackground(Color.white);
+                    m[x1][y1 - 1].setBackground(Color.white);
+                    m[x1][y1 - 2].setBackground(Color.white);
+                    m[x1][y1 - 3].setBackground(Color.white);
+                    m[x1][y1 - 4].setBackground(Color.white);
+                    score = score + 5;
+                } else {
+                    m[x1][y1].setBackground(Color.white);                                   //+++x
+                    m[x1][y1 - 1].setBackground(Color.white);
+                    m[x1][y1 - 2].setBackground(Color.white);
+                    m[x1][y1 - 3].setBackground(Color.white);
+                    score = score + 4;
+                }
+            } else {                                                                        //++x
+                m[x1][y1].setBackground(Color.white);
+                m[x1][y1 - 1].setBackground(Color.white);
+                m[x1][y1 - 2].setBackground(Color.white);
+                score = score + 3;
+            }
+        }
+        //-x+
+        if ((m[x1][y1].getBackground().equals(m[x1 + 1][y1].getBackground())) && (m[x1][y1].getBackground().equals(m[x1 - 1][y1].getBackground())) && (1 <= x1) && (x1 < mWidth - 1)) {
+            m[x1][y1].setBackground(Color.white);
+            m[x1 + 1][y1].setBackground(Color.white);
+            m[x1 - 1][y1].setBackground(Color.white);
+            score = score + 3;
+        }
+        //-y+
+        if ((m[x1][y1].getBackground().equals(m[x1][y1 + 1].getBackground())) && (m[x1][y1].getBackground().equals(m[x1][y1 - 1].getBackground())) && (1 <= y1) && (y1 < mWidth - 1)) {
+            m[x1][y1].setBackground(Color.white);
+            m[x1][y1 + 1].setBackground(Color.white);
+            m[x1][y1 - 1].setBackground(Color.white);
+            score = score + 3;
+        }
+    }
+
+    int getY(Object t, JButton[][] m) {
         int row, col;
         int col1 = 100;
         for (row = 0; row < mLenth; row++) {
@@ -124,14 +431,14 @@ public class board implements ActionListener {
         return col1;
     }
 
-    public int getX(Object t, JButton[][] m) {
-        int row, col = 0;
+    int getX(Object t, JButton[][] m) {
+        int row;
         int row1 = 100;
         for (row = 0; row < mLenth; row++)
             if (row1 != 100) {
                 break;
             } else {
-                for (col = 0; col < mWidth; col++) {
+                for (int col = 0; col < mWidth; col++) {
                     int temp = m[row][col].hashCode();
                     if (temp == t.hashCode()) {
                         row1 = row;
@@ -142,43 +449,43 @@ public class board implements ActionListener {
         return row1;
     }
 
-    public boolean moveXtoLeftIsUsefull(int i, int j, JButton[][] m) {
-        if ((((m[i][j].getBackground()).equals(m[i - 1][j + 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i - 1][j - 1].getBackground()))) ||         //16
-                (((m[i][j].getBackground()).equals(m[i - 2][j].getBackground())) && ((m[i][j].getBackground()).equals(m[i - 3][j].getBackground()))) ||                 //10
-                (((m[i][j].getBackground()).equals(m[i - 1][j - 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i - 1][j - 2].getBackground()))) ||         //8
-                (((m[i][j].getBackground()).equals(m[i - 1][j + 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i - 1][j + 2].getBackground()))))      //12
+    boolean moveXtoLeftIsUsefull(int i, int j, JButton[][] m) {
+        if ((((m[i][j].getBackground()).equals(m[i - 1][j + 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i - 1][j - 1].getBackground())) && ((1 <= i) && (i < mWidth) && (1 <= j) && (j < mWidth - 1))) ||         //16
+                (((m[i][j].getBackground()).equals(m[i - 2][j].getBackground())) && ((m[i][j].getBackground()).equals(m[i - 3][j].getBackground())) && ((3 <= i) && (i < mWidth) && (0 <= j) && (j < mWidth))) ||                 //10
+                (((m[i][j].getBackground()).equals(m[i - 1][j - 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i - 1][j - 2].getBackground())) && ((1 <= i) && (i < mWidth) && (2 <= j) && (j < mWidth))) ||         //8
+                (((m[i][j].getBackground()).equals(m[i - 1][j + 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i - 1][j + 2].getBackground()))) && ((1 <= i) && (i < mWidth) && (0 <= j) && (j < mWidth - 2)))      //12
         {
             return true;
         } else return false;
     }
 
-    public boolean moveXtoRightIsUsefull(int i, int j, JButton[][] m) {
+    boolean moveXtoRightIsUsefull(int i, int j, JButton[][] m) {
 
-        if (((m[i][j].getBackground()).equals(m[i + 1][j + 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i + 1][j - 1].getBackground())) ||               //14
-                (((m[i][j].getBackground()).equals(m[i + 2][j].getBackground())) && ((m[i][j].getBackground()).equals(m[i + 3][j].getBackground()))) ||                 //4
-                (((m[i][j].getBackground()).equals(m[i + 1][j + 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i + 1][j + 2].getBackground()))) ||         //2
-                (((m[i][j].getBackground()).equals(m[i + 1][j - 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i + 1][j - 2].getBackground()))))           //6
+        if (((m[i][j].getBackground()).equals(m[i + 1][j + 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i + 1][j - 1].getBackground()) && ((0 <= i) && (i < mWidth - 1) && (1 <= j) && (j < mWidth - 1))) ||               //14
+                (((m[i][j].getBackground()).equals(m[i + 2][j].getBackground())) && ((m[i][j].getBackground()).equals(m[i + 3][j].getBackground())) && ((0 <= i) && (i < mWidth - 3) && (0 <= j) && (j < mWidth))) ||                 //4
+                (((m[i][j].getBackground()).equals(m[i + 1][j + 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i + 1][j + 2].getBackground())) && ((0 <= i) && (i < mWidth - 1) && (0 <= j) && (j < mWidth - 2))) ||         //2
+                (((m[i][j].getBackground()).equals(m[i + 1][j - 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i + 1][j - 2].getBackground()))) && ((0 <= i) && (i < mWidth - 1) && (2 <= j) && (j < mWidth)))           //6
         {
             return true;
         } else return false;
     }
 
-    public boolean moveYUpIsUsefull(int i, int j, JButton[][] m) {
-        if ((((m[i][j].getBackground()).equals(m[i][j + 2].getBackground())) && ((m[i][j].getBackground()).equals(m[i][j + 3].getBackground()))) ||                      //1
-                (((m[i][j].getBackground()).equals(m[i + 1][j + 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i - 1][j + 1].getBackground()))) ||          //13
-                (((m[i][j].getBackground()).equals(m[i + 1][j + 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i + 2][j + 1].getBackground()))) ||          //3
-                (((m[i][j].getBackground()).equals(m[i - 1][j + 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i - 2][j + 1].getBackground()))))          //11
+    boolean moveYUpIsUsefull(int i, int j, JButton[][] m) {
+        if ((((m[i][j].getBackground()).equals(m[i][j + 2].getBackground())) && ((m[i][j].getBackground()).equals(m[i][j + 3].getBackground())) && ((0 <= i) && (i < mWidth) && (0 <= j) && (j < mWidth - 3))) ||                      //1
+                (((m[i][j].getBackground()).equals(m[i + 1][j + 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i - 1][j + 1].getBackground())) && ((1 <= i) && (i < mWidth - 1) && (0 <= j) && (j < mWidth - 1))) ||          //13
+                (((m[i][j].getBackground()).equals(m[i + 1][j + 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i + 2][j + 1].getBackground())) && ((0 <= i) && (i < mWidth - 2) && (0 <= j) && (j < mWidth - 1))) ||          //3
+                (((m[i][j].getBackground()).equals(m[i - 1][j + 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i - 2][j + 1].getBackground())) && ((2 <= i) && (i < mWidth) && (0 <= j) && (j < mWidth - 1))))          //11
         {
             return true;
         } else return false;
     }
 
-    public boolean moveYDownIsUsefull(int i, int j, JButton[][] m) {
+    boolean moveYDownIsUsefull(int i, int j, JButton[][] m) {
         if (
-                (((m[i][j].getBackground()).equals(m[i][j - 2].getBackground())) && ((m[i][j].getBackground()).equals(m[i][j - 3].getBackground()))) ||                  //7
-                        (((m[i][j].getBackground()).equals(m[i - 1][j - 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i + 1][j - 1].getBackground()))) ||          //15
-                        (((m[i][j].getBackground()).equals(m[i + 1][j - 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i + 2][j - 1].getBackground()))) ||          //5
-                        (((m[i][j].getBackground()).equals(m[i - 1][j - 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i - 2][j - 1].getBackground()))))           //9
+                (((m[i][j].getBackground()).equals(m[i][j - 2].getBackground())) && ((m[i][j].getBackground()).equals(m[i][j - 3].getBackground())) && ((0 <= i) && (i < mWidth) && (3 <= j) && (j < mWidth))) ||                  //7
+                        (((m[i][j].getBackground()).equals(m[i - 1][j - 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i + 1][j - 1].getBackground())) && ((1 <= i) && (i < mWidth - 1) && (1 <= j) && (j < mWidth))) ||          //15
+                        (((m[i][j].getBackground()).equals(m[i + 1][j - 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i + 2][j - 1].getBackground())) && ((0 <= i) && (i < mWidth - 2) && (1 <= j) && (j < mWidth))) ||          //5
+                        (((m[i][j].getBackground()).equals(m[i - 1][j - 1].getBackground())) && ((m[i][j].getBackground()).equals(m[i - 2][j - 1].getBackground())) && ((2 <= i) && (i < mWidth) && (1 <= j) && (j < mWidth))))           //9
         {
             return true;
         } else return false;
