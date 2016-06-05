@@ -6,10 +6,20 @@ import javax.swing.*;
 public class Cell extends JButton {
     /*static MyJButton[][] jButton;*/
     int _x;
+    int _y;
+    String condition;
 
     public Cell(int _x, int _y) {
         this._x = _x;
         this._y = _y;
+    }
+
+    public String getCondition() {
+        return condition;
+    }
+
+    public void setCondition(String condition) {
+        this.condition = condition;
     }
 
     public int get_y() {
@@ -27,8 +37,6 @@ public class Cell extends JButton {
     public void set_x(int _x) {
         this._x = _x;
     }
-
-    int _y;
 
     @Override
     public boolean equals(Object o) {
@@ -49,9 +57,6 @@ public class Cell extends JButton {
         result = 31 * result + _y;
         return result;
     }
-
-
-
 
 
 }
