@@ -3,11 +3,11 @@ import javax.swing.*;
 /**
  * Created by eniml on 05.06.2016.
  */
-public class Cell extends JButton {
+class Cell extends JButton {
     /*static MyJButton[][] jButton;*/
-    int _x;
-    int _y;
-    String condition;
+    private int _x;
+    private int _y;
+    private String condition;
 
     public Cell(int _x, int _y) {
         this._x = _x;

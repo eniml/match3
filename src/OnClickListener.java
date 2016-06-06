@@ -8,28 +8,37 @@ import java.util.Random;
 /**
  * Created by eniml on 01.06.2016.
  */
-public class board implements ActionListener {
-    private static JButton[][] board;
+class OnClickListener implements ActionListener {
+    private static final Random RANDOM = new Random();
     private static JLabel[] dbg;
-    private final int mLength = 20;
-    private final int mWidth = 20;
+    private final int LENGTH = 8;
+    private final int WIDTH = 8;
     private final Color[] colors = {Color.RED, Color.GREEN, Color.BLUE, Color.PINK, Color.YELLOW, Color.CYAN};
+    private Cell[][] board;
     private Color firstCellColor, secondCellColor;
-    private Object source;
     private int score;
-    //private String[] textColor = new String[]{"red", "green", "blue"/*, "pink", "yellow", "cyan", "white"*/};
-    private int firstCellX = 4;
-    private int firstCellY = 4;
-    private int secondCellX, secondCellY;
-    private boolean firstCellPressed = false, secondCellPressed = false;
+    private int fCX = 0;
+    private int fCY = 0;
+    private int sCX, sCY;
+    private boolean secondCellPressed = false;
 
-    private board() {
-        board = new JButton[mLength][mWidth];
+    private OnClickListener() {
+        board = new Cell[LENGTH][WIDTH];
         int row, col;
         Random random = new Random();
-        JFrame.setDefaultLookAndFeelDecorated(false);
+        final JFrame myFrame = getjFrame();
+        addCells(random, myFrame);
+        destroyMatchedCellsAfterAdding(board, 20);
+    }
+
+    public static void main(String[] args) {
+        OnClickListener qq = new OnClickListener();
+        JFrame q = new JFrame();
+    }
+
+    private JFrame getjFrame() {
         final JFrame myFrame = new JFrame("test");
-        myFrame.setLayout(new GridLayout(11, 10));
+        myFrame.setLayout(new GridLayout(9, 8));
         JMenuBar menuBar = new JMenuBar();
         JMenu fileMenu = new JMenu("Game");
         fileMenu.addSeparator();
@@ -38,7 +47,7 @@ public class board implements ActionListener {
         newGameItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 reShuffleCells(board);
-                destroyMatchedCellsAfterAdding(board);
+                destroyMatchedCellsAfterAdding(board, 20);
                 score = 0;
                 dbg[0].setText(String.valueOf(getScore()));
             }
@@ -52,59 +61,40 @@ public class board implements ActionListener {
         });
         menuBar.add(fileMenu);
         myFrame.setJMenuBar(menuBar);
-        for (col = 0; col < mLength; col++) {
-            for (row = 0; row < mWidth; row++) {
-                boolean bool = true;
-                board[row][col] = new JButton();
-                int pos = random.nextInt(colors.length);
-                board[row][col].setBackground(colors[pos]);
-                if ((col < 5) | (col > 14) | (row < 5) | (row > 14)) {
-
-                    bool = false;
-                    board[row][col].setEnabled(false);
-                    board[row][col].setBackground(Color.WHITE);
-                    board[row][col].setVisible(true);
-                }
-                board[row][col].setToolTipText(String.valueOf(row + " " + col) + "   " + board[row][col].getBackground());
-                board[row][col].addActionListener(this);
-                if (bool) {
-                    myFrame.add(board[row][col]);
-                }
-            }
-        }
-        destroyMatchedCellsAfterAdding(board);
         score = 0;
         dbg = new JLabel[7];
         dbg[0] = new JLabel();
-        myFrame.add(dbg[0]);
-        dbg[1] = new JLabel();
-        myFrame.add(dbg[1]);
-        dbg[2] = new JLabel();
-        myFrame.add(dbg[2]);
-        dbg[3] = new JLabel();
-        myFrame.add(dbg[3]);
-        dbg[4] = new JLabel();
-        myFrame.add(dbg[4]);
-        dbg[5] = new JLabel();
-        myFrame.add(dbg[5]);
         myFrame.setLocationByPlatform(true);
         myFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         myFrame.pack();
         myFrame.setSize(600, 600);
         myFrame.setVisible(true);
+        return myFrame;
     }
 
-    public static void main(String[] args) {
-        board qq = new board();
-        JFrame q = new JFrame();
+    private void addCells(Random random, JFrame myFrame) {
+        int col;
+        int row;
+        for (col = LENGTH - 1; col >= 0; col--) {
+            for (row = 0; row < WIDTH; row++) {
+                board[row][col] = new Cell(row, col);
+                int pos = random.nextInt(colors.length);
+                board[row][col].setBackground(colors[pos]);
+                board[row][col].setCondition("normal");
+                board[row][col].setToolTipText(board[row][col].get_x() + " " + board[row][col].get_y() + board[row][col].getCondition());
+                board[row][col].addActionListener(this);
+                myFrame.add(board[row][col]);
+            }
+        }
+        myFrame.validate();
     }
 
-    private void reShuffleCells(JButton[][] board) {
+    void reShuffleCells(Cell[][] board) {
         Random r = new Random();
-        for (int i = mWidth - 6; i >= 5; i--) {
-            for (int j = 5; j <= mLength - 6; j++) {
+        for (int i = 0; i < WIDTH; i++) {
+            for (int j = 0; j < WIDTH; j++) {
                 int pos = r.nextInt(colors.length);
-                board[j][i].setBackground(colors[pos]);
+                board[i][j].setBackground(colors[pos]);
             }
         }
     }
@@ -117,53 +107,60 @@ public class board implements ActionListener {
         this.score = score;
     }
 
+    //TO DO + hascode equals.
+    //TODO extract variables like cuurentColor
+    //TODO extract methods/classes
+    //TODO create maven module and move all libraries there
+    //TO DO + remove extra fields (borders)
     public void actionPerformed(ActionEvent e) {
         int tempX, tempY;
-        source = e.getSource();
-        tempX = getX(source, board);
-        tempY = getY(source, board);
+        Object tempSrc = e.getSource();
+        if (!(tempSrc instanceof Cell))
+            return;
+        Cell source = (Cell) e.getSource();
+        tempX = source.get_x();
+        tempY = source.get_y();
+        sCX = tempX;
+        sCY = tempY;
         secondCellColor = board[tempX][tempY].getBackground();
-        secondCellX = tempX;
-        secondCellY = tempY;
-        //dbg[1].setText(firstCellY + "    || ");
-        //dbg[2].setText(secondCellX + "  ");
-        //dbg[3].setText(secondCellY + "  ");
-        firstCellPressed = true;
+        boolean firstCellPressed = true;
 
-        if (isSwapPossible()) {
-            board[secondCellX][secondCellY].setBackground(firstCellColor);
-            board[firstCellX][firstCellY].setBackground(secondCellColor);
-            destroyMatchedCells(firstCellX, firstCellY, board);
-            destroyMatchedCells(secondCellX, secondCellY, board);
+        if (explosionPossible()) {
+            swap();
+            findLines(board);
             loweringCellsAfterDestroying(board);
             fillingDestroyedCells(board);
-            destroyMatchedCellsAfterAdding(board);
+            destroyMatchedCellsAfterAdding(board, 3);
             dbg[0].setText(String.valueOf(getScore()));
-
-            firstCellX = 4;
-            firstCellY = 4;
-            secondCellX = 0;
-            secondCellY = 0;
+            fCX = 0;
+            fCY = 0;
+            sCX = 0;
+            sCY = 0;
             secondCellPressed = false;
         } else {
             firstCellColor = secondCellColor;
-            firstCellX = secondCellX;
-            firstCellY = secondCellY;
+            fCX = sCX;
+            fCY = sCY;
             secondCellPressed = true;
             firstCellPressed = false;
         }
     }
 
-    private boolean isSwapPossible() {
-        return (moveXtoRightIsUsefull(firstCellX, firstCellY, board) && (firstCellY == secondCellY) && ((secondCellX - firstCellX) == 1)) ||
-                (moveXtoLeftIsUsefull(firstCellX, firstCellY, board) && (firstCellY == secondCellY) && ((firstCellX - secondCellX) == 1)) ||
-                (moveYUpIsUsefull(firstCellX, firstCellY, board) && (firstCellX == secondCellX) && ((secondCellY - firstCellY) == 1)) ||
-                (moveYDownIsUsefull(firstCellX, firstCellY, board) && (firstCellX == secondCellX) && ((firstCellY - secondCellY) == 1)) ||
-                (moveXtoRightIsUsefull(secondCellX, secondCellY, board) && (firstCellY == secondCellY) && ((firstCellX - secondCellX) == 1)) ||
-                (moveXtoLeftIsUsefull(secondCellX, secondCellY, board) && (firstCellY == secondCellY) && ((secondCellX - firstCellX) == 1)) ||
-                (moveYUpIsUsefull(secondCellX, secondCellY, board) && (firstCellX == secondCellX) && ((firstCellY - secondCellY) == 1)) ||
-                (moveYDownIsUsefull(secondCellX, secondCellY, board) && (firstCellX == secondCellX) && ((secondCellY - firstCellY) == 1))
-                        && (secondCellPressed) && (secondCellX + secondCellY >= 0);
+    private void swap() {
+        board[sCX][sCY].setBackground(firstCellColor);
+        board[fCX][fCY].setBackground(secondCellColor);
+    }
+
+    private boolean explosionPossible() {
+        return (moveXtoRightIsUsefull(fCX, fCY, board) && (fCY == sCY) && ((sCX - fCX) == 1)) ||
+                (moveXtoLeftIsUsefull(fCX, fCY, board) && (fCY == sCY) && ((fCX - sCX) == 1)) ||
+                (moveYUpIsUsefull(fCX, fCY, board) && (fCX == sCX) && ((sCY - fCY) == 1)) ||
+                (moveYDownIsUsefull(fCX, fCY, board) && (fCX == sCX) && ((fCY - sCY) == 1)) ||
+                (moveXtoRightIsUsefull(sCX, sCY, board) && (fCY == sCY) && ((fCX - sCX) == 1)) ||
+                (moveXtoLeftIsUsefull(sCX, sCY, board) && (fCY == sCY) && ((sCX - fCX) == 1)) ||
+                (moveYUpIsUsefull(sCX, sCY, board) && (fCX == sCX) && ((fCY - sCY) == 1)) ||
+                (moveYDownIsUsefull(sCX, sCY, board) && (fCX == sCX) && ((sCY - fCY) == 1))
+                        && (secondCellPressed) && (sCX + sCY >= 0);
     }
 
 // --Commented out by Inspection START (03.06.2016 7:50):
@@ -180,345 +177,170 @@ public class board implements ActionListener {
 //    }
 // --Commented out by Inspection STOP (03.06.2016 7:50)
 
-    private void destroyMatchedCellsAfterAdding(JButton[][] board) {
+    void destroyMatchedCellsAfterAdding(Cell[][] board, int k) {
         int t = 0;
-        while (t <= 20) {
-            for (int i = mWidth - 6; i >= 5; i--) {
-                for (int j = 5; j <= mLength - 6; j++) {
-                    destroyMatchedCells(j, i, board);
-                    fillingDestroyedCells(board);
-                    t++;
-                }
-            }
+        while (t <= k) {
+            findLines(board);
+            loweringCellsAfterDestroying(board);
+            fillingDestroyedCells(board);
+            t++;
         }
     }
 
-    private void fillingDestroyedCells(JButton[][] board) {
-        Random r = new Random();
-        for (int i = mWidth - 6; i >= 5; i--) {
-            for (int j = 5; j <= mLength - 6; j++) {
-                if (board[j][i].getBackground().equals(Color.WHITE)) {
-                    int pos = r.nextInt(colors.length);
-                    board[j][i].setBackground(colors[pos]);
+
+    private void fillingDestroyedCells(Cell[][] board) {
+        for (int i = 0; i < WIDTH; i++) {
+            for (int j = 0; j < WIDTH; j++) {
+                if (board[i][j].getBackground().equals(Color.WHITE)) {
+                    int pos = RANDOM.nextInt(colors.length);
+                    board[i][j].setBackground(colors[pos]);
                 }
             }
         }
 
     }
 
-    private void loweringCellsAfterDestroying(JButton[][] board) {
-        for (int i = mWidth - 6; i >= 5; i--) {
-            for (int j = 5; j <= mLength - 6; j++) {
+    private void loweringCellsAfterDestroying(Cell[][] board) {
+        for (int j = 0; j < WIDTH; j++) {
+            for (int i = 0; i < LENGTH; i++) {
                 int k;
-                k = i - 1;
-                while ((board[j][i].getBackground().equals(Color.WHITE) && (k >= 5))) {
-                    board[j][i].setBackground(board[j][k].getBackground());
-                    board[j][k].setBackground(Color.WHITE);
-                    k--;
+                k = j + 1;
+                while ((board[i][j].getBackground().equals(Color.WHITE)) && (k < LENGTH)) {
+                    board[i][j].setBackground(board[i][k].getBackground());
+                    board[i][k].setBackground(Color.WHITE);
+                    k++;
                 }
             }
         }
     }
 
-    private void destroyMatchedCells(int x1, int y1, JButton[][] m) {
-        boolean flag = true;
-        //x+
-        if (flag && (m[x1][y1].getBackground().equals(m[x1 + 1][y1].getBackground())) && (m[x1][y1].getBackground().equals(m[x1 + 2][y1].getBackground())) && (0 <= x1) && (x1 < mWidth - 2)) {
-            if (flag && (m[x1][y1].getBackground().equals(m[x1 - 1][y1].getBackground())) && (1 <= x1)) {
-                if (flag && (m[x1][y1].getBackground().equals(m[x1 + 3][y1].getBackground())) && (x1 < mWidth - 3)) {    //+x+++
-                    m[x1][y1].setBackground(Color.white);
-                    m[x1 + 1][y1].setBackground(Color.white);
-                    m[x1 + 2][y1].setBackground(Color.white);
-                    m[x1 - 1][y1].setBackground(Color.white);
-                    m[x1 + 3][y1].setBackground(Color.white);
-                    score = score + 5;
-                    flag = false;
-                }
-                if (flag && (m[x1][y1].getBackground().equals(m[x1 - 2][y1].getBackground())) && (2 <= x1)) {    //++x++
-                    m[x1][y1].setBackground(Color.white);
-                    m[x1 + 1][y1].setBackground(Color.white);
-                    m[x1 + 2][y1].setBackground(Color.white);
-                    m[x1 - 1][y1].setBackground(Color.white);
-                    m[x1 - 2][y1].setBackground(Color.white);
-                    score = score + 5;
-                    flag = false;
+    void findLines(Cell[][] board) {
+        Color tempColor;
+        Cell tempButton = null;
+        MassBox[] xBox = new MassBox[20];
+        MassBox[] yBox = new MassBox[20];
+        int xLineCounter = 0;
+        for (int j = 0; j < LENGTH; j++) {
+            tempColor = board[0][j].getBackground();
+            int rowCounter = 1;
+            for (int i = 1; i < WIDTH; i++) {
+                if (board[i][j].getBackground().equals(tempColor)) {
+                    rowCounter++;
+                    tempButton = board[i][j];
                 } else {
-                    m[x1][y1].setBackground(Color.white);                                   //+x++
-                    m[x1 + 1][y1].setBackground(Color.white);
-                    m[x1 + 2][y1].setBackground(Color.white);
-                    m[x1 - 1][y1].setBackground(Color.white);
-                    score = score + 4;
-                    flag = false;
-                }
-            }
-            if (flag && (m[x1][y1].getBackground().equals(m[x1 + 3][y1].getBackground())) && (x1 <= mWidth - 3)) {
-                if (flag && (m[x1][y1].getBackground().equals(m[x1 + 4][y1].getBackground())) && (x1 <= mWidth - 3)) {    //x++++
-                    m[x1][y1].setBackground(Color.white);
-                    m[x1 + 1][y1].setBackground(Color.white);
-                    m[x1 + 2][y1].setBackground(Color.white);
-                    m[x1 + 3][y1].setBackground(Color.white);
-                    m[x1 + 4][y1].setBackground(Color.white);
-                    score = score + 5;
-                    flag = false;
-                } else {
-                    m[x1][y1].setBackground(Color.white);                                   //x+++
-                    m[x1 + 1][y1].setBackground(Color.white);
-                    m[x1 + 2][y1].setBackground(Color.white);
-                    m[x1 + 3][y1].setBackground(Color.white);
-                    score = score + 4;
-                    flag = false;
-                }
-            } else {
-                m[x1][y1].setBackground(Color.white);                                       //x++
-                m[x1 + 1][y1].setBackground(Color.white);
-                m[x1 + 2][y1].setBackground(Color.white);
-                score = score + 3;
-                flag = false;
-            }
-        }
-        //-x
-        if (flag && (m[x1][y1].getBackground().equals(m[x1 - 1][y1].getBackground())) && (m[x1][y1].getBackground().equals(m[x1 - 2][y1].getBackground())) && (2 <= x1) && (x1 < mWidth)) {
-            if (flag && (m[x1][y1].getBackground().equals(m[x1 + 1][y1].getBackground())) && (x1 < mWidth - 1)) {
-                if (flag && (m[x1][y1].getBackground().equals(m[x1 - 3][y1].getBackground())) && (3 <= x1)) {   //+++x+
-                    m[x1][y1].setBackground(Color.white);
-                    m[x1 - 1][y1].setBackground(Color.white);
-                    m[x1 - 2][y1].setBackground(Color.white);
-                    m[x1 - 3][y1].setBackground(Color.white);
-                    m[x1 + 1][y1].setBackground(Color.white);
-                    score = score + 5;
-                    flag = false;
-                } else {                                                                    //++x+
-                    m[x1][y1].setBackground(Color.white);
-                    m[x1 - 1][y1].setBackground(Color.white);
-                    m[x1 - 2][y1].setBackground(Color.white);
-                    m[x1 + 1][y1].setBackground(Color.white);
-                    score = score + 4;
-                    flag = false;
-                }
-            }
-            if (flag && (m[x1][y1].getBackground().equals(m[x1 - 3][y1].getBackground())) && (3 <= x1)) {
-                if (flag && (m[x1][y1].getBackground().equals(m[x1 - 4][y1].getBackground())) && (5 <= x1)) {    //++++x
-                    m[x1][y1].setBackground(Color.white);
-                    m[x1 - 1][y1].setBackground(Color.white);
-                    m[x1 - 2][y1].setBackground(Color.white);
-                    m[x1 - 3][y1].setBackground(Color.white);
-                    m[x1 - 4][y1].setBackground(Color.white);
-                    score = score + 5;
-                    flag = false;
-                } else {
-                    m[x1][y1].setBackground(Color.white);                                   //+++x
-                    m[x1 - 1][y1].setBackground(Color.white);
-                    m[x1 - 2][y1].setBackground(Color.white);
-                    m[x1 - 3][y1].setBackground(Color.white);
-                    score = score + 4;
-                    flag = false;
-                }
-            } else {                                                                        //++x
-                m[x1][y1].setBackground(Color.white);
-                m[x1 - 1][y1].setBackground(Color.white);
-                m[x1 - 2][y1].setBackground(Color.white);
-                score = score + 3;
-                flag = false;
-            }
-        }
-        //y+
-        if (flag && (m[x1][y1].getBackground().equals(m[x1][y1 + 1].getBackground())) && (m[x1][y1].getBackground().equals(m[x1][y1 + 2].getBackground())) && (0 <= y1) && (y1 < mWidth - 2)) {
-            if (flag && (m[x1][y1].getBackground().equals(m[x1][y1 - 1].getBackground())) && (1 <= y1)) {
-                if (flag && (m[x1][y1].getBackground().equals(m[x1][y1 + 3].getBackground())) && (y1 < mWidth - 3)) {    //+x+++
-                    m[x1][y1].setBackground(Color.white);
-                    m[x1][y1 + 1].setBackground(Color.white);
-                    m[x1][y1 + 2].setBackground(Color.white);
-                    m[x1][y1 - 1].setBackground(Color.white);
-                    m[x1][y1 + 3].setBackground(Color.white);
-                    score = score + 5;
-                    flag = false;
-                }
-                if (flag && (m[x1][y1].getBackground().equals(m[x1][y1 - 2].getBackground())) && (2 <= y1)) {    //++x++
-                    m[x1][y1].setBackground(Color.white);
-                    m[x1][y1 + 1].setBackground(Color.white);
-                    m[x1][y1 + 2].setBackground(Color.white);
-                    m[x1][y1 - 1].setBackground(Color.white);
-                    m[x1][y1 - 2].setBackground(Color.white);
-                    score = score + 5;
-                    flag = false;
-                } else {
-                    m[x1][y1].setBackground(Color.white);                                   //+x++
-                    m[x1][y1 + 1].setBackground(Color.white);
-                    m[x1][y1 + 2].setBackground(Color.white);
-                    m[x1][y1 - 1].setBackground(Color.white);
-                    score = score + 4;
-                    flag = false;
-                }
-            }
-            if (flag && (m[x1][y1].getBackground().equals(m[x1][y1 + 3].getBackground())) && (y1 < mWidth - 3)) {
-                if (flag && (m[x1][y1].getBackground().equals(m[x1][y1 + 4].getBackground())) && (y1 < mWidth - 4)) {    //x++++
-                    m[x1][y1].setBackground(Color.white);
-                    m[x1][y1 + 1].setBackground(Color.white);
-                    m[x1][y1 + 2].setBackground(Color.white);
-                    m[x1][y1 + 3].setBackground(Color.white);
-                    m[x1][y1 + 4].setBackground(Color.white);
-                    score = score + 5;
-                    flag = false;
-                } else {
-                    m[x1][y1].setBackground(Color.white);                                   //x+++
-                    m[x1][y1 + 1].setBackground(Color.white);
-                    m[x1][y1 + 2].setBackground(Color.white);
-                    m[x1][y1 + 3].setBackground(Color.white);
-                    score = score + 4;
-                    flag = false;
-                }
-            } else {
-                m[x1][y1].setBackground(Color.white);                                       //x++
-                m[x1][y1 + 1].setBackground(Color.white);
-                m[x1][y1 + 2].setBackground(Color.white);
-                score = score + 3;
-                flag = false;
-            }
-        }
-        //y-
-        if (flag && (m[x1][y1].getBackground().equals(m[x1][y1 - 1].getBackground())) && (m[x1][y1].getBackground().equals(m[x1][y1 - 2].getBackground())) && (2 <= y1)) {
-            if (flag && (m[x1][y1].getBackground().equals(m[x1][y1 + 1].getBackground())) && (y1 < mWidth - 1)) {
-                if (flag && (m[x1][y1].getBackground().equals(m[x1][y1 - 3].getBackground())) && (3 <= y1)) {   //+++x+
-                    m[x1][y1].setBackground(Color.white);
-                    m[x1][y1 - 1].setBackground(Color.white);
-                    m[x1][y1 - 2].setBackground(Color.white);
-                    m[x1][y1 - 3].setBackground(Color.white);
-                    m[x1][y1 + 1].setBackground(Color.white);
-                    score = score + 5;
-                    flag = false;
-                } else {                                                                    //++x+
-                    m[x1][y1].setBackground(Color.white);
-                    m[x1][y1 - 1].setBackground(Color.white);
-                    m[x1][y1 - 2].setBackground(Color.white);
-                    m[x1][y1 + 1].setBackground(Color.white);
-                    score = score + 4;
-                    flag = false;
-                }
-            }
-            if (flag && (m[x1][y1].getBackground().equals(m[x1][y1 - 3].getBackground())) && (3 <= y1)) {
-                if (flag && (m[x1][y1].getBackground().equals(m[x1][y1 - 4].getBackground())) && (5 <= y1)) {    //++++x
-                    m[x1][y1].setBackground(Color.white);
-                    m[x1][y1 - 1].setBackground(Color.white);
-                    m[x1][y1 - 2].setBackground(Color.white);
-                    m[x1][y1 - 3].setBackground(Color.white);
-                    m[x1][y1 - 4].setBackground(Color.white);
-                    score = score + 5;
-                    flag = false;
-                } else {
-                    m[x1][y1].setBackground(Color.white);                                   //+++x
-                    m[x1][y1 - 1].setBackground(Color.white);
-                    m[x1][y1 - 2].setBackground(Color.white);
-                    m[x1][y1 - 3].setBackground(Color.white);
-                    score = score + 4;
-                    flag = false;
-                }
-            } else {                                                                        //++x
-                m[x1][y1].setBackground(Color.white);
-                m[x1][y1 - 1].setBackground(Color.white);
-                m[x1][y1 - 2].setBackground(Color.white);
-                score = score + 3;
-                flag = false;
-            }
-        }
-        //-x+
-        if (flag && (m[x1][y1].getBackground().equals(m[x1 + 1][y1].getBackground())) && (m[x1][y1].getBackground().equals(m[x1 - 1][y1].getBackground())) && (1 <= x1) && (x1 < mWidth - 1)) {
-            m[x1][y1].setBackground(Color.white);
-            m[x1 + 1][y1].setBackground(Color.white);
-            m[x1 - 1][y1].setBackground(Color.white);
-            score = score + 3;
-            flag = false;
-        }
-        //-y+
-        if (flag && (m[x1][y1].getBackground().equals(m[x1][y1 + 1].getBackground())) && (m[x1][y1].getBackground().equals(m[x1][y1 - 1].getBackground())) && (1 <= y1) && (y1 < mWidth - 1)) {
-            m[x1][y1].setBackground(Color.white);
-            m[x1][y1 + 1].setBackground(Color.white);
-            m[x1][y1 - 1].setBackground(Color.white);
-            score = score + 3;
-            flag = false;
-        }
-    }
-
-    int getY(Object t, JButton[][] m) {
-        int row, col;
-        int col1 = 100;
-        for (row = 0; row < mLength; row++) {
-            if (col1 != 100) {
-                break;
-            } else {
-                for (col = 0; col < mWidth; col++) {
-                    int temp = m[row][col].hashCode();
-                    if (temp == t.hashCode()) {
-                        col1 = col;
-                        break;
+                    if (rowCounter >= 3) {
+                        xLineCounter++;
+                        xBox[xLineCounter] = new MassBox(rowCounter, tempButton.get_x(), tempButton.get_y());
+                        rowCounter = 1;
+                        tempColor = board[i][j].getBackground();
+                    } else {
+                        tempColor = board[i][j].getBackground();
+                        rowCounter = 1;
                     }
                 }
             }
+            if (rowCounter >= 3) {
+                xLineCounter++;
+                xBox[xLineCounter] = new MassBox(rowCounter, tempButton.get_x(), tempButton.get_y());
+            }
         }
-        return col1;
-    }
-
-    int getX(Object t, JButton[][] m) {
-        int row;
-        int row1 = 100;
-        for (row = 0; row < mLength; row++)
-            if (row1 != 100) {
-                break;
-            } else {
-                for (int col = 0; col < mWidth; col++) {
-                    int temp = m[row][col].hashCode();
-                    if (temp == t.hashCode()) {
-                        row1 = row;
-                        break;
+        int yLineCounter = 0;
+        for (int i = 0; i < LENGTH; i++) {
+            tempColor = board[i][0].getBackground();
+            int colCounter = 1;
+            for (int j = 1; j < LENGTH; j++) {
+                if (board[i][j].getBackground().equals(tempColor)) {
+                    colCounter++;
+                    tempButton = board[i][j];
+                } else {
+                    if (colCounter >= 3) {
+                        yLineCounter++;
+                        yBox[yLineCounter] = new MassBox(colCounter, tempButton.get_x(), tempButton.get_y());
+                        colCounter = 1;
+                        tempColor = board[i][j].getBackground();
+                    } else {
+                        tempColor = board[i][j].getBackground();
+                        colCounter = 1;
                     }
                 }
             }
-        return row1;
+            if (colCounter >= 3) {
+                yLineCounter++;
+                yBox[yLineCounter] = new MassBox(colCounter, tempButton.get_x(), tempButton.get_y());
+            }
+        }
+        while (xLineCounter > 0) {
+            int x = xBox[xLineCounter].getLastBoxX();
+            int y = xBox[xLineCounter].getLastBoxY();
+            int counter = xBox[xLineCounter].getNumberOfCells();
+            int t = 0;
+            while (counter > 0) {
+                board[x - t][y].setCondition("toDestroy");
+                t++;
+                counter--;
+            }
+            xLineCounter--;
+        }
+
+        while (yLineCounter > 0) {
+            int x = yBox[yLineCounter].getLastBoxX();
+            int y = yBox[yLineCounter].getLastBoxY();
+            int counter = yBox[yLineCounter].getNumberOfCells();
+            int t = 0;
+            while (counter > 0) {
+                board[x][y - t].setCondition("toDestroy");
+                t++;
+                counter--;
+
+            }
+            yLineCounter--;
+        }
+
+        for (int i = 0; i < WIDTH; i++) {
+            for (int j = 0; j < LENGTH; j++) {
+                if (board[i][j].getCondition().equals("toDestroy")) {
+                    board[i][j].setBackground(Color.white);
+                    board[i][j].setCondition("normal");
+                }
+            }
+        }
     }
 
-    boolean moveXtoLeftIsUsefull(int i, int j, JButton[][] m) {
-        if ((checkColor(m, i, j, 1, 0, 1, 1, -1, -1, 1, -1)) ||
+
+    boolean moveXtoLeftIsUsefull(int i, int j, Cell[][] m) {
+        return (checkColor(m, i, j, 1, 0, 1, 1, -1, -1, 1, -1)) ||
                 (checkColor(m, i, j, 3, 0, 0, 0, -2, -3, 0, 0)) ||
                 (checkColor(m, i, j, 1, 0, 2, 0, -1, -1, -1, -2)) ||
-                (checkColor(m, i, j, 1, 0, 0, 2, -1, -1, 1, 2))) {
-            return true;
-        } else return false;
+                (checkColor(m, i, j, 1, 0, 0, 2, -1, -1, 1, 2));
     }
 
-    boolean moveXtoRightIsUsefull(int i, int j, JButton[][] m) {
-        if ((checkColor(m, i, j, 0, 1, 1, 1, 1, 1, 1, -1)) ||
+    boolean moveXtoRightIsUsefull(int i, int j, Cell[][] m) {
+        return (checkColor(m, i, j, 0, 1, 1, 1, 1, 1, 1, -1)) ||
                 (checkColor(m, i, j, 0, 3, 0, 0, 2, 3, 0, 0)) ||
                 (checkColor(m, i, j, 0, 1, 0, 2, 1, 1, 1, 2)) ||
-                (checkColor(m, i, j, 0, 1, 2, 0, 1, 1, -1, -2))) {
-            return true;
-        } else return false;
+                (checkColor(m, i, j, 0, 1, 2, 0, 1, 1, -1, -2));
     }
 
-    boolean moveYUpIsUsefull(int i, int j, JButton[][] m) {
-        if ((checkColor(m, i, j, 0, 0, 0, 3, 0, 0, 2, 3)) ||
+    boolean moveYUpIsUsefull(int i, int j, Cell[][] m) {
+        return (checkColor(m, i, j, 0, 0, 0, 3, 0, 0, 2, 3)) ||
                 (checkColor(m, i, j, 1, 1, 0, 1, 1, -1, 1, 1)) ||
                 (checkColor(m, i, j, 0, 2, 0, 1, 1, 2, 1, 1)) ||
-                (checkColor(m, i, j, 2, 0, 0, 1, -1, -2, 1, 1))) {
-            return true;
-        } else return false;
+                (checkColor(m, i, j, 2, 0, 0, 1, -1, -2, 1, 1));
     }
 
-    boolean moveYDownIsUsefull(int i, int j, JButton[][] m) {
-        if ((checkColor(m, i, j, 0, 0, 3, 0, 0, 0, -2, -3)) ||
+    boolean moveYDownIsUsefull(int i, int j, Cell[][] m) {
+        return (checkColor(m, i, j, 0, 0, 3, 0, 0, 0, -2, -3)) ||
                 (checkColor(m, i, j, 1, 1, 1, 0, -1, 1, -1, -1)) ||
                 (checkColor(m, i, j, 0, 2, 1, 0, 1, 2, -1, -1)) ||
-                (checkColor(m, i, j, 2, 0, 1, 0, -1, -2, -1, -1))) {
-            return true;
-        } else return false;
+                (checkColor(m, i, j, 2, 0, 1, 0, -1, -2, -1, -1));
     }
 
-    boolean checkColor(JButton[][] m, int i, int j, int lX, int rX, int lY, int rY, int x1, int x2, int y1, int y2) {                       //highwaytohell
+    boolean checkColor(Cell[][] m, int i, int j, int lX, int rX, int lY, int rY, int x1, int x2, int y1, int y2) {                       //highwaytohell
         Color currentColor = m[i][j].getBackground();
         boolean flag = false;
-        if ((i >= lX) && (i < mWidth - rX) && (j >= lY) && (j < mWidth - rY)) {
+        if ((i >= lX) && (i < WIDTH - rX) && (j >= lY) && (j < WIDTH - rY)) {
             flag = ((currentColor.equals(m[i + x1][j + y1].getBackground())) && (currentColor.equals(m[i + x2][j + y2].getBackground())));
         }
         return flag;
     }
 }
-
-
