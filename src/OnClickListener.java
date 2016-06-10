@@ -73,6 +73,7 @@ class OnClickListener implements ActionListener {
     }
 
     private void addCells(Random random, JFrame myFrame) {
+		//TODO please move declaration to cicle 
         int col;
         int row;
         for (col = LENGTH - 1; col >= 0; col--) {
@@ -228,6 +229,7 @@ class OnClickListener implements ActionListener {
                     rowCounter++;
                     tempButton = board[i][j];
                 } else {
+						//TODO why 3??? 
                     if (rowCounter >= 3) {
                         xLineCounter++;
                         xBox[xLineCounter] = new MassBox(rowCounter, tempButton.get_x(), tempButton.get_y());
@@ -239,6 +241,7 @@ class OnClickListener implements ActionListener {
                     }
                 }
             }
+			//TODO why 3??? 
             if (rowCounter >= 3) {
                 xLineCounter++;
                 xBox[xLineCounter] = new MassBox(rowCounter, tempButton.get_x(), tempButton.get_y());
@@ -264,6 +267,7 @@ class OnClickListener implements ActionListener {
                     }
                 }
             }
+			//TODO why 3??? Please extract constant and give meaningfull name 
             if (colCounter >= 3) {
                 yLineCounter++;
                 yBox[yLineCounter] = new MassBox(colCounter, tempButton.get_x(), tempButton.get_y());
@@ -273,6 +277,7 @@ class OnClickListener implements ActionListener {
             int x = xBox[xLineCounter].getLastBoxX();
             int y = xBox[xLineCounter].getLastBoxY();
             int counter = xBox[xLineCounter].getNumberOfCells();
+			//TODO meaningless variable name
             int t = 0;
             while (counter > 0) {
                 board[x - t][y].setCondition("toDestroy");
@@ -298,6 +303,8 @@ class OnClickListener implements ActionListener {
 
         for (int i = 0; i < WIDTH; i++) {
             for (int j = 0; j < LENGTH; j++) {
+				//TODO best practice is comparing string vs variable but not visa versa
+				//anyway this code shall be replaced with enum
                 if (board[i][j].getCondition().equals("toDestroy")) {
                     board[i][j].setBackground(Color.white);
                     board[i][j].setCondition("normal");

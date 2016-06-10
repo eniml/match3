@@ -14,6 +14,7 @@ class Cell extends JButton {
         this._y = _y;
     }
 
+	//TODO replace String const with Enum
     public String getCondition() {
         return condition;
     }
